@@ -1,3 +1,7 @@
+sudo apt update
+sudo apt install pdflatex
+sudo apt install texlive-lang-cyrillic
+
 # spbu_diploma - LaTeX шаблон для ВКР СПбГУ (2021)
 
 ### Свежее обновление (3.05.2020) - вариант со шрифтом Tempora, выглядит значительно лучше
