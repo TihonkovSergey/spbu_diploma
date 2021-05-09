@@ -20,7 +20,7 @@
 
 \usepackage{amsthm,amssymb, amsmath}
 \usepackage{textcomp}
-
+\usepackage{dsfont}
 
 \begin{document}
 
@@ -157,14 +157,125 @@
     \end{longtable}
 \end{center}
 
-\section{Консенсус}
-\subsection{Теория}
-\subsection{Fast averaging}
+\section{Теория}
+\subsection{Задача машинного обучения}
+Вспомним стандартную постановку задачи машинного обучения: есть некоторое параметрическое семейство функций  $f(\bullet, \theta)$ и набор данных $(x_i, y_i)_{i=0}^{m-1}$, требуется подобрать параметры $\theta$ так, чтобы $f(\bullet, \theta)$ как можно лучше соответствовала этим данным.
+
+Формулировка в виде задачи оптимизации:
+ \begin{equation} \label{eq:ml_task}
+ \mathcal{J}(\theta)=
+ \frac{1}{m}\sum_{i=0}^{m-1}g(f(x_i, \theta), y_i)\rightarrow_{\theta}\min
+ \end{equation}
+где $g(f(x_i, \theta), y_i)$ -- функция ошибки.
+
+Часто эту задачу решают с помощью пакетного градиентного спуска (Mini Batch Gradient Descent) \cite{mbgd}:
+  \begin{equation} \label{eq:mbgd}
+\theta_{k+1} = \theta_k - \alpha_k\frac{1}{|S_k|}\sum_{i\in S_k}\nabla g(f(x_i, \theta_k), y_i)
+ \end{equation}
+где $S_k$ –- случайно выбранное подмножество $\{0, \ldots, m-1\}$, $\alpha_k$ –- коэффициент скорости обучения.
+
+\subsection{Алгоритм среднего консенсуса}
+
+Алгоритм консенсуса -- это процесс в теории управления, используемый для достижения согласия по единому значению данных среди распределенных процессов или систем. То есть форма стабильной системы, в которой состояния $\pi(t)_i$ распределенной системы сошлись к одному значению:
+\begin{equation}
+\pi_i(t)\rightarrow \pi^*,~0\leq i\leq m-1.
+\end{equation}
+
+Базовый (средний) консенсус можно использовать для децентрализованного вычисления среднего нескольких чисел, каждое из которых хранится на отдельном вычислительном узле \cite{consensus_basics}:
+\begin{equation}
+x^0 = (x_1^0, \ldots, x_p^0)
+\end{equation}
+\begin{equation}
+x_i^* = \frac{1}{p}\sum_{j=1}^{p}x_j^0.
+\end{equation}
+
+Рассмотрим сеть агентов, принимающих решения, с динамикой $\dot x_i = u_i$, заинтересованных в достижении консенсуса посредством локальной коммуникации со своими соседями на графе $G = (V, E)$.
+То есть сходимости:
+\begin{equation}
+x_1 = x_2 = \ldots = x_n.
+\end{equation}
+
+Это может быть выражено как $x = \alpha \mathds{1} $, где $\mathds{1} = (1, \ldots, 1)^T$ и $\alpha \in R$ -- коллективное решение группы агентов. Пусть $A = a_{ij}$ -- матрица смежности графа $G$. Множество соседей агента $i$ -- это $N_i$ и определяется формулой
+\begin{equation}
+N_i = \{ j \in V: a_{ij} \ne 0 \}; \quad \quad V = \{1, \ldots, n\}.
+\end{equation}
+
+Агент $i$ коммуницирует с агентом $j$, если $j$ является соседом $i$. Набор всех узлов и их соседей определяет набор ребер графа
+\begin{equation}
+E = \{ (i,j) \in V\times V: a_{ij} \ne 0\}.
+\end{equation}
+
+Динамический граф $G(t) = (V, E(t))$ -- это граф, в котором набор ребер $E(t)$ и матрица смежности $A(t)$ изменяются во времени. Ясно, что множество соседей $N_i(t)$ каждого агента в динамическом графе также является изменяющимся во времени множеством.
+
+В \cite{consensus_basics_2} показано, что линейная система
+\begin{equation} \label{eq:system_dynamic}
+\dot x_i(t) = \sum_{j \in N_i} a_{ij}(x_j(t)-x_i(t))
+\end{equation}
+представляет собой алгоритм распределенного консенсуса, т.е. гарантирует сходимость к коллективному решению через локальные межагентные взаимодействия. Предполагая, что граф неориентированный ($a_{ij}=a_{ji}, \forall i,j \in V$), следует, что сумма состояний всех узлов является инвариантной величиной, или $\sum_i \dot x_i = 0$. В частности, применив это условие для $t = 0 \text{ и } t = \infty$ получаем:
+\begin{equation}
+\alpha = \frac{1}{n}\sum_i x_i.
+\end{equation}
+
+Другими словами, если консенсус достигается асимптотически, то коллективное решение обязательно равно среднему значению начального состояния всех узлов.
+
+В компактном виде изменения системы \ref{eq:system_dynamic} можно записать как
+\begin{equation}
+\dot x = -Lx
+\end{equation}
+где $L$ -- лапласиан графа $G$. По определению, $L$ имеет правый собственный вектор, равный $\mathds{1}$, связанный с нулевым собственным значением из-за тождества $L\mathds{1} = 0$. В случае неориентированных графов лапласиан графа удовлетворяет следующему свойству суммы квадратов (ССК):
+\begin{equation} \label{eq:sos}
+x^TLx = \frac{1}{2}\sum_{(i, j) \in E} a_{ij}(x_j-x_i)^2.
+\end{equation}
+
+Определив квадратичную функцию несогласия как
+\begin{equation}
+\varphi(x) = \frac{1}{2}x^TLx
+\end{equation}
+становится ясно, что алгоритм \ref{eq:system_dynamic} такой же, как
+\begin{equation}
+\dot x = -\nabla \varphi(x)
+\end{equation}
+или алгоритм градиентного спуска. Этот алгоритм асимптотически сходится при соблюдении двух условий: 1) $L$ - положительно полуопределенная матрица; 2) единственное решение системы \ref{eq:system_dynamic} это $\alpha \mathds{1}$ для некоторого $\alpha$. Оба эти условия выполняются для связного графа и следуют из ССК-свойства лапласиана графа в \ref{eq:sos}. Следовательно, средний консенсус достигается асимптотически для всех начальных состояний. Этот факт резюмируется в \cite{consensus_basics} следующей леммой:
+
+\textit{Лемма 1}: Пусть $G$ - связный неориентированный граф. Тогда алгоритм \ref{eq:system_dynamic} асимптотически решает задачу среднего консенсуса для всех начальных состояний.
+
+\subsection{Быстрая сходимость}
+Выяснив, что алгоритм \ref{eq:system_dynamic} асимптотически решает задачу среднего консенсуса, можно задаться вопросом о скорости его сходимости. В \cite{fast_averaging} говорится о том, что можно выбрать такие веса $a_{ij}$ ребер графа $G$, чтобы алгоритм сходился с максимальной скоростью. Для этого необходимо решить задачу оптимизации, в которой максимизируется второе из минимальных собственных значений лапласиана $L$ графа $G$ при известных ограничениях на веса ребер. Стоит отметить, что второе собственное значение лапласиана графа возникает из теории графов и называется алгебраическая связность.
+
+
+\subsection{Консенсус и задача МО}
+Применим алгоритм среднего консенсуса к задаче машинного обучения. Пусть каждый вычислительный узел идентифицирован своим индексом $t = \{1, \ldots, p \}$ и хранит свою копию параметров $\theta^t$. Происходит разделение исходных данных $S = \cup_{t=1}^p S^t$, причем $S_i \cup S^j = \oslash \text{ для } i \ne j$. Каждое $S^t$ является множеством исходных данных соответствующего узла $t$. Тогда, в соответствии с \cite{decentralized_sgd}, каждый шаг алгоритма для каждого агента $t$ будет выглядеть как:
+\begin{itemize}
+\item
+    Обучить текущие веса $\theta_k^t$ на подмножестве локальных данных:
+     \begin{equation} \label{eq:algo_step_1}
+    \theta_{k+\frac{1}{2}}^t =
+    \theta_k^t - \alpha_k\frac{1}{|S_k^t|}\sum_{i\in S_k^t}\nabla g(f(x_i, \theta_k), y_i)
+    \end{equation}
+
+\item
+    Сделать консенсусное усреднение параметров с соседями:
+     \begin{equation} \label{eq:algo_step_2}
+     \theta_{k+1}^t =
+     \sum_{i \in N_t}a_{pi}\theta_{k+\frac{1}{2}}^i
+     \end{equation}
+где $N_t$ -- соседи узла $t$, причем $t \in N_t$.
+\end{itemize}
+
+Шаг \ref{eq:algo_step_1} отличается от стандартного подхода \ref{eq:mbgd} только тем, что множество $S_k^t$ зависит от $t$, эти множества не пересекаются для разных $t$, то есть происходит разделение данных между вычислительными узлами.
+
+Шаг \ref{eq:algo_step_2} –- усреднение параметров модели  между соседними узлами. Здесь происходит обмен информацией между узлами, причем этот шаг не обязан выполняться каждую итерацию.
+
+Как следует из теории, изложенной в предыдущем параграфе, эти шаги эквивалентны обучению одиночной модели с использованием батча $S_k^1 \cup S_k^2 \cup \ldots \cup S_k^p$.
+
+В случае распределенного обучения нейронных сетей под достижением консенсуса мы подразумеваем асимптотическую сходимость параметров моделей на каждом узле $\theta_1^*=\theta_2^*=\ldots=\theta_p^*$.
+Однако на практике удобно не отслеживать факт достижения консенсуса с какой-то точностью, а делать конечное количество итераций, заданное вначале.
+
 
 \pagebreak
 \section{Алгоритм}
 \subsection{Средний консенсус}
-\subsection{Взвешенный консенсус}
+\subsection{Консенсус с несбалансированными данными}
 
 \section{Эксперименты}
 \subsection{Выбор модели и датасета}
@@ -187,7 +298,7 @@
 \end {center}
 \end {figure}
 Ссылаемся на график ~\ref{graph-fig}.
-Ссылка на статью: \cite{voc}, \cite{vo2}
+Ссылка на статью: \cite{mbgd}
 
 \specialsection{Выводы}
 Жизнь --- тлен.
@@ -198,7 +309,15 @@
 % Библиография в cpsconf стиле
 % Аргумент {1} ниже включает переопределенный стиль с выравниванием слева
 \begin{thebibliography}{1}
-\bibitem{voc} Griffin D.W., Lim J.S. \flqq Multiband excitation vocoder\frqq. IEEE ASSP-36 (8), 1988, pp. 1223-1235.
-\bibitem{vo2} Griffin D.W., Lim J.S. \flqq Multiband excitation vocoder\frqq. IEEE ASSP-36 (8), 1988, pp. 1223-1235.
+\bibitem{mbgd} S. Ghadimi, G. Lan, and H. Zhang. \flqq Mini-batch stochastic approximation methods for nonconvex stochastic composite optimization\frqq. Mathematical Programming, 2016. // URL: https://link.springer.com/content/pdf/10.1007/s10107-014-0846-1.pdf
+
+\bibitem{consensus_basics} R Olfati-Saber, JA Fax, RM Murray. \flqq Consensus and cooperation in networked multi-agent systems \frqq. IEEE, 2007.
+
+\bibitem{consensus_basics_2} R. Olfati-Saber and R. M. Murray, \flqq Consensus problems in networks of agents with switching topology and time-delays \frqq. IEEE Transactions on Automatic Control, vol. 49, no. 9, pp. 1520-1533, Sept. 2004, doi: 10.1109/TAC.2004.834113.
+
+\bibitem{fast_averaging} Boyd S, \flqq Convex optimization of graph Laplacian eigenvalues \frqq. Proceedings of the International Congress of Mathematicians. – 2006. – Т. 3. – №. 1-3. – С. 1311-1319.
+
+\bibitem{decentralized_sgd} Koloskova A. et al. \flqq A unified theory of decentralized SGD with changing topology and local updates \frqq. International Conference on Machine Learning. – PMLR, 2020. – С. 5381-5393.
+
 \end{thebibliography}
 \end{document}
