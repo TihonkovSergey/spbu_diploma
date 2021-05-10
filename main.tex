@@ -25,7 +25,32 @@
 \usepackage{dsfont}
 
 % оформление алгоритма
-\usepackage[ruled,vlined]{algorithm2e}
+%\usepackage[ruled,vlined]{algorithm2e}
+\usepackage{algorithm,algpseudocode}
+\usepackage{float}
+\usepackage{lipsum}
+
+\makeatletter
+\newenvironment{breakablealgorithm}
+  {% \begin{breakablealgorithm}
+   \begin{center}
+     \refstepcounter{algorithm}% New algorithm
+     \hrule height.8pt depth0pt \kern2pt% \@fs@pre for \@fs@ruled
+     \renewcommand{\caption}[2][\relax]{% Make a new \caption
+       {\raggedright\textbf{\fname@algorithm~\thealgorithm} ##2\par}%
+       \ifx\relax##1\relax % #1 is \relax
+         \addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##2}%
+       \else % #1 is not \relax
+         \addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##1}%
+       \fi
+       \kern2pt\hrule\kern2pt
+     }
+  }{% \end{breakablealgorithm}
+     \kern2pt\hrule\relax% \@fs@post for \@fs@ruled
+   \end{center}
+  }
+\makeatother
+
 
 \begin{document}
 
@@ -284,112 +309,105 @@ AllReduce стохастический градиентный спуск (AllRed
 \subsection{Средний консенсус}
 Основные этапы алгоритма обучения нейронных сетей с использованием алгоритма среднего консенсуса:
 
-\begin{algorithm}[H]
-\SetAlgoLined
-Определить топологию сети $W$ и количество узлов $p$.
+\begin{breakablealgorithm}
+  \caption{Средний консенсус}
+\begin{algorithmic}
+\State Определить топологию сети $W$ и количество узлов $p$.
+\State Инициализировать локальные модели $\theta_0^t$ на всех узлах $t \in \{ 1, \ldots, p \}$.
+\State Разделить исходные данные по узлам $S = \cup_{t=1}^p S^t$, причем $S^i \cap S^j = \oslash$ для $i \ne j$.
+\State Определить расписание изменения коэффициента скорости обучения $\alpha(k)$.
+\State Определить функцию ошибки $g(f(x_i,),y_i)$, где $(x_i,y_i) \in S$.
+\State Определить количество эпох $n$, итераций в каждой эпохе $m$, общее количество итераций $K=mn$.
+\State Определить частоту итераций консенсуса $q$.
 
-Инициализировать локальные модели $\theta_0^t$ на всех узлах $t \in \{ 1, \ldots, p \}$.
+ \For{$k \in \{0\ldots K-1\}$}
+    \For{$t \in \{0\ldots p-1\}$}
+        \State $S_k^t \leftarrow RandomSubset(S^t)$. \Comment{Выбор батча данных}
+        \State $\theta_{k+\frac{1}{2}}^t \leftarrow
+            \theta_k^t - \alpha_k\frac{1}{|S_k^t|}\sum_{i\in S_k^t}\nabla g(f(x_i, \theta_k), y_i)$ \Comment{Итерация обучения}
 
-Разделить исходные данные по узлам $S = \cup_{t=1}^p S^t$, причем $S^i \cap S^j = \oslash$ для $i \ne j$.
-
-Определить расписание изменения коэффициента скорости обучения $\alpha(k)$.
-
-Определить функцию ошибки $g(f(x_i,),y_i)$, где $(x_i,y_i) \in S$.
-
-Определить количество эпох $n$, итераций в каждой эпохе $m$, общее количество итераций $K=mn$.
-
-Определить частоту итераций консенсуса $q$.
-
- \ForAll{$k \in \{0\ldots K-1\}$}{
-    \ForAll{$t \in \{0\ldots p-1\}$}{
-        Выбрать батч данных $S_k^t$.
-
-        Обновить веса локальной модели используя Mini Batch Gradient Descent:
-        \begin{equation}
-            \theta_{k+\frac{1}{2}}^t =
-            \theta_k^t - \alpha_k\frac{1}{|S_k^t|}\sum_{i\in S_k^t}\nabla g(f(x_i, \theta_k), y_i).
-        \end{equation}
-
-        Произвести итерацию консенсуса:
-
-      \eIf{$k=0 \text{ (mod } q$)}{
-        \begin{equation}
-            \theta_{k+1}^t =
-            \sum_{j \in N_t}w_{tj}\theta_{k+\frac{1}{2}}^j
-        \end{equation}
-       }{
-       \begin{equation}
-            \theta_{k+1}^t = \theta_{k+\frac{1}{2}}^t
-        \end{equation}
-        }
-    }
-}
-\caption{Средний консенсус}
-\end{algorithm}
+        \If {$k=0 \text{ (mod } q$)} \Comment{Итерация консенсуса}
+            \State $ \theta_{k+1}^t \leftarrow
+                \sum_{j \in N_t}w_{tj}\theta_{k+\frac{1}{2}}^j$
+       \Else
+            \State $\theta_{k+1}^t \leftarrow
+            \theta_{k+\frac{1}{2}}^t.$
+        \EndIf
+    \EndFor
+\EndFor
+\end{algorithmic}
+\end{breakablealgorithm}
 
 
 
 \subsection{Консенсус с несбалансированными данными}
 Предыдущий алгоритм был обобщен для имитации поведения агентов с разной вычислительной мощностью:
 
-\begin{algorithm}[H]
-\SetAlgoLined
-Определить топологию сети $W$ и количество узлов $p$.
+\begin{breakablealgorithm}
+  \caption{Консенсус с несбалансированными данными}
+\begin{algorithmic}
+\State Определить топологию сети $W$ и количество узлов $p$.
+\State Инициализировать локальные модели $\theta_0^t$ на всех узлах $t \in \{ 1, \ldots, p \}$.
+\State Разделить исходные данные по узлам $S = \cup_{t=1}^p S^t$, причем $S^i \cap S^j = \oslash$ для $i \ne j$. Размеры множеств $S^t$ необязательно равны.
+\State Определить расписание изменения коэффициента скорости обучения $\alpha(k)$.
+\State Определить функцию ошибки $g(f(x_i,),y_i)$, где $(x_i,y_i) \in S$.
+\State Определить количество эпох $n$, итераций в каждой эпохе $m$, общее количество итераций $K=mn$.
+\State Определить частоту обучения на одном батче для каждого агента $qt^t$.
+\State Определить частоту итераций консенсуса для каждого агента $qc^t$.
 
-Инициализировать локальные модели $\theta_0^t$ на всех узлах $t \in \{ 1, \ldots, p \}$.
+ \For{$k \in \{0\ldots K-1\}$}
+    \For{$t \in \{0\ldots p-1\}$}
+        \State $S_k^t \leftarrow RandomSubset(S^t)$. \Comment{Выбор батча данных}
 
-Разделить исходные данные по узлам $S = \cup_{t=1}^p S^t$, причем $S^i \cap S^j = \oslash$ для $i \ne j$. Размеры множеств $S^t$ необязательно равны.
+        \If {$k=0 \text{ (mod } qt^t$)} \Comment{Итерация обучения}
+            \State $\theta_{k+\frac{1}{2}}^t \leftarrow
+                \theta_k^t - \alpha_k\frac{1}{|S_k^t|}\sum_{i\in S_k^t}\nabla g(f(x_i, \theta_k), y_i)$
+        \Else
+            \State $\theta_{k+\frac{1}{2}}^t \leftarrow
+            \theta_k^t.$
+        \EndIf
 
-Определить расписание изменения коэффициента скорости обучения $\alpha(k)$.
-
-Определить функцию ошибки $g(f(x_i,),y_i)$, где $(x_i,y_i) \in S$.
-
-Определить количество эпох $n$, итераций в каждой эпохе $m$, общее количество итераций $K=mn$.
-
-Определить частоту обучения на одном батче для каждого агента $qt^t$.
-
-Определить частоту итераций консенсуса для каждого агента $qc^t$.
-
- \ForAll{$k \in \{0\ldots K-1\}$}{
-    \ForAll{$t \in \{0\ldots p-1\}$}{
-        Выбрать батч данных $S_k^t$.
-
-        Обновить веса локальной модели используя Mini Batch Gradient Descent:
-
-        \eIf{$k=0 \text{ (mod } qt^t$)}{
-        \begin{equation}
-            \theta_{k+\frac{1}{2}}^t =
-            \theta_k^t - \alpha_k\frac{1}{|S_k^t|}\sum_{i\in S_k^t}\nabla g(f(x_i, \theta_k), y_i).
-        \end{equation}
-        }{
-        \begin{equation}
-            \theta_{k+\frac{1}{2}}^t = \theta_k^t.
-        \end{equation}
-        }
-
-        Произвести итерацию консенсуса:
-
-      \eIf{$k=0 \text{ (mod } qc^t$)}{
-        \begin{equation}
-            \theta_{k+1}^t =
-            \sum_{j \in N_t}w_{tj}\theta_{k+\frac{1}{2}}^j
-        \end{equation}
-       }{
-       \begin{equation}
-            \theta_{k+1}^t = \theta_{k+\frac{1}{2}}^t
-        \end{equation}
-        }
-    }
-}
-\caption{Консенсус с несбалансированными данными}
-\end{algorithm}
+        \If {$k=0 \text{ (mod } qc^t$)}\Comment{Итерация консенсуса}
+            \State $ \theta_{k+1}^t \leftarrow
+                \sum_{j \in N_t}w_{tj}\theta_{k+\frac{1}{2}}^j$
+       \Else
+            \State $\theta_{k+1}^t \leftarrow
+            \theta_{k+\frac{1}{2}}^t.$
+        \EndIf
+    \EndFor
+\EndFor
+\end{algorithmic}
+\end{breakablealgorithm}
 
 
 \section{Эксперименты}
 \subsection{Выбор модели и датасета}
+В первую очередь стояла задача проводить эксперименты на известном датасете, чтобы иметь возможность отталкиваться от чужих результатов. Была выбрана область классификации изображений и набор данных \flqq CIFAR-10\frqq. Он подходит под перечисленные требования, а также не требует многочисленных вычислительных ресурсов. Проведя анализ топ state of the art моделей машинного обучения в этой области, пришел к выводу, что большинство решений - это модификации Residual Network (ResNet) моделей. Исходя из этого принял решение, что нужно проводить эксперименты на каком-нибудь конкретном представителе, выбрав реализацию исходя из:
+\begin{itemize}
+    \item скорости обучения
+    \item количества параметров
+    \item наличия реализации на фреймворке с необходимой гибкостью и доступом к параметрам для их модификации
+\end{itemize}
+
+В итоге была отобрана реализация ResNet-20 \cite{github_resnet}.
+
+
 \subsection{Преобразование данных}
-\subsection{LSR}
+Для воспроизводимости результатов считаю необходимым зафиксировать преобразования, которые осуществлялись над данными перед началом обучения.
+Использовались только распространенные в области классификации изображений преобразования:
+\begin{itemize}
+\item Поворот изображения по горизонтали с вероятностью 0,5
+\item Случайное обрезание до размера 32 на 32 пикселей с отступом 4 пикселя от края
+\item Нормирование по всем каналам (R, G, B), с параметрами:
+    \begin{itemize}
+        \item  среднее: (0,485, 0,456, 0,406)
+        \item среднеквадратическое отклонение: (0,229, 0,224, 0,225)
+    \end{itemize}
+\end{itemize}
+
 \subsection{Разминка модели}
+
+
 \subsection{Топология сети}
 Про экспандеры, разное количество диагоналей в цикле и вцелом про то какие топологии хорошие
 
@@ -448,6 +466,8 @@ AllReduce стохастический градиентный спуск (AllRed
 \bibitem{o10} P. Bianchi, G. Fort, and W. Hachem. \flqq Performance of a distributed stochastic approximation algorithm\frqq. IEEE Transactions on Information Theory, 2013.
 
 \bibitem{o11} Xiangru Lian, Wei Zhang, Ce Zhang, Ji Li. \flqq Asynchronous Decentralized Parallel Stochastic Gradient Descent\frqq. Proceedings of the 35th International Conference on Machine Learning, PMLR 80:3043-3052, 2018.
+
+\bibitem{github_resnet} \href{https://github.com/akamaster/pytorch_resnet_cifar10}{GitHub repository with implementing ResNet-20}. // URL: https://github.com/akamaster/pytorch\_resnet\_cifar10
 
 \end{thebibliography}
 \end{document}
