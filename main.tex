@@ -19,8 +19,13 @@
 \usepackage[pdftex]{graphicx}
 
 \usepackage{amsthm,amssymb, amsmath}
+
+% доп символы
 \usepackage{textcomp}
 \usepackage{dsfont}
+
+% оформление алгоритма
+\usepackage[ruled,vlined]{algorithm2e}
 
 \begin{document}
 
@@ -69,94 +74,6 @@
 \end{itemize}
 \pagebreak
 
-\section{Обзор}
-\subsection{Обзор раз}
-Ненумерованная формула:
-
-\begin{equation}
-    \begin{pmatrix} \dot{\varphi}\\ \dot{\theta} \\ \dot{\psi} \end{pmatrix}
-    = \begin{pmatrix}
-        cos(\theta)cos(\psi) & -sin(\psi) & 0 \\
-        cos(\theta)sin(\psi) & cos(\psi)  & 0 \\
-        -sin(\theta)         & 0         &  1
-    \end{pmatrix}^{-1}
-    \begin{pmatrix} \omega_x\\ \omega_y \\ \omega_z \end{pmatrix}.
-\end{equation}
-
-Нумерованная формула:
-
-\begin{equation} \label{eq:my_ref}
-    i^2 = -1.
-\end{equation}
-
-Тест ссылки на формулу~\ref{eq:my_ref}!
-
-\subsection{Обзор два}
-
-\subsection{Обзор три}
-Ниже тестируется очень большая таблица на несколько страниц
-
-\begin{center}
-    \begin{longtable}{|p{2cm}|p{3cm}|p{7cm}|p{3cm}|}
-    \caption{Заголовок таблицы}\\
-    \hline
-    1 & 2 & 3 & 4\\
-    \hline
-    2 & 2 & 3 & 4\\
-    \hline
-    3 & 2 & 3 & 4\\
-    \hline
-    4 & 2 & 3 & 4\\
-    \hline
-    5 & 2 & 3 & 4\\
-    \hline
-    6 & 2 & 3 & 4\\
-    \hline
-    7 & 2 & 3 & 4\\
-    \hline
-    8 & 2 & 3 & 4\\
-    \hline
-    9 & 2 & 3 & 4\\
-    \hline
-    10 & 2 & 3 & 4\\
-    \hline
-
-
-    \end{longtable}
-\end{center}
-
-
-А также тестируется счетчик таблиц, жирные и двойные линии.
-
-\begin{center}
-    \begin{longtable}{|p{2cm}||p{3cm}|p{7cm}|p{3cm}|}
-    \caption{Заголовок таблицы нумер 2}\\
-    \hline
-    1 & 2 & 3 & 4\\
-    \hline
-    2 & 2 & 3 & 4\\
-    \hline
-    3 & 2 & очень жирная ячейка \par с переносом (работаеттт!) & 4\\
-    \hline
-    4 & 2 & 3 & 4\\
-    \hline
-    5 & 2 & 3 & 4\\
-    \hline
-    6 & 2 & 3 & 4\\
-    \hline
-    7 & 2 & 3 & 4\\
-    \hline
-    8 & 2 & 3 & 4\\
-    \hline
-    9 & 2 & 3 & 4\\
-    \hline
-    10 & 2 & 3 & 4\\
-    \hline
-
-
-    \end{longtable}
-\end{center}
-
 \section{Теория}
 \subsection{Задача машинного обучения}
 Вспомним стандартную постановку задачи машинного обучения: есть некоторое параметрическое семейство функций  $f(\bullet, \theta)$ и набор данных $(x_i, y_i)_{i=0}^{m-1}$, требуется подобрать параметры $\theta$ так, чтобы $f(\bullet, \theta)$ как можно лучше соответствовала этим данным.
@@ -176,7 +93,7 @@
 
 \subsection{Алгоритм среднего консенсуса}
 
-Алгоритм консенсуса -- это процесс в теории управления, используемый для достижения согласия по единому значению данных среди распределенных процессов или систем. То есть форма стабильной системы, в которой состояния $\pi(t)_i$ распределенной системы сошлись к одному значению:
+Алгоритм консенсуса -- это процесс в теории автоматического управления, используемый для достижения согласия по единому значению данных среди распределенных процессов или систем. То есть форма стабильной системы, в которой состояния $\pi(t)_i$ распределенной системы сошлись к одному значению:
 \begin{equation}
 \pi_i(t)\rightarrow \pi^*,~0\leq i\leq m-1.
 \end{equation}
@@ -270,18 +187,209 @@ x^TLx = \frac{1}{2}\sum_{(i, j) \in E} a_{ij}(x_j-x_i)^2.
 
 В случае распределенного обучения нейронных сетей под достижением консенсуса мы подразумеваем асимптотическую сходимость параметров моделей на каждом узле $\theta_1^*=\theta_2^*=\ldots=\theta_p^*$.
 Однако на практике удобно не отслеживать факт достижения консенсуса с какой-то точностью, а делать конечное количество итераций, заданное вначале.
+\pagebreak
 
+\section{Обзор}
+Подходы к параллельным вычислениям делятся на два основных направления:
+\begin{itemize}
+\item параллелизм по данным (Data Parallel)
+\item модельный параллелизм (Model Parallel)
+\end{itemize}
+
+В параллелизме по данным происходит вычисление искомой функции каждым узлом на своей части данных. В модельном параллелизме каждый узел вычисляет на общих данных какую-то часть функции. Выбранный для экспериментов подход является разновидностью Data Parallel.
+
+Наиболее часто используемые распределенные системы машинного обучения делятся на синхронные / асинхронные и на централизованные / децентрализованные. На практике их применяют для распределенного вычисления суммы
+\begin{equation}
+\sum_{i\in S_k}\nabla g(f(x_i, \theta_k), y_i)
+\end{equation}
+в \ref{eq:mbgd}. Кратко опишу основные существующие подходы:
+
+При синхронном параллельном стохастическом градиентном спуске (S-PSGD) \cite{o1} каждый узел хранит локальную копию основной модели. На каждой итерации он получает минибатч данных от центрального сервера, вычисляет градиент и передает его обратно серверу. После того как центральный сервер получил данные со всех узлов, он вычисляет среднее значение градиента и дает задание каждому узлу обновить веса модели в соответствии с этим значением. Затем наступает следующая итерация.
+
+В асинхронном параллельном стохастическом градиентном спуске (A-PSGD) \cite{o2, o3, o4, o5} тот же подход, но асинхронность достигается за счет дополнительного разрешения узлам использовать устаревшие значения весов при вычислении градиентов. Это позволяет избавиться от необходимости ждать самый медленный узел на каждом шаге синхронизации параметров.
+
+AllReduce стохастический градиентный спуск (AllReduce-SGD) \cite{o6, o7} похож на  S-PSGD,  однако в нем нет сервера параметров, а узлы образуют кольцевую сеть. На очередной итерации каждый узел вычисляет градиент по минибатчу исходных данных. После чего данные передаются по сети, используя парадигму AllReduce, пока каждый узел не получит значения градиентов со всех остальных узлов. Градиенты усредняются и каждый узел обновляет веса своей локальной модели. Из-за наличия фазы синхронизации и большого количества взаимодействий между узлами, данный метод плохо себя показывает в сетях с низкой пропускной способностью.
+
+В децентрализованном параллельном стохастическом градиентном спуске (D-PSGD) \cite{o8, o9, o10} все узлы связаны в сеть, которую можно представить в виде связного графа. Каждый узел имеет свою локальную копию модели. На каждой итерации все узлы вычисляют градиенты по локальным данным и усредняют их, используя градиенты своих соседей в сети. Используя полученное значение градиента, узел обновляет веса своей локальной модели. В данном методе обмен данными и обучение могут происходить параллельно, но из-за синхронизации все равно существует зависимость сети от самого медленного узла.
+
+В 2018 году исследователи из IBM предложили \cite{o11} асинхронный децентрализованный стохастический градиентный спуск (AD-PSGD), основанный на сплетнях. Он отличается от D-PSGD тем, что в каждом узле усредняются не градиенты, а веса модели, и не по всем соседям узла, а с одним случайным. В 2020 году группа исследователей \cite{decentralized_sgd} обобщила и дополнила существующие наработки в этой сфере. В частности, они проанализировали ситуацию, когда случайно выбирается не один, а произвольное число соседей узла. Данный новый метод и был взят за основу для исследования.
+
+Ниже тестируется очень большая таблица на несколько страниц
+
+\begin{center}
+    \begin{longtable}{|p{2cm}|p{3cm}|p{7cm}|p{3cm}|}
+    \caption{Заголовок таблицы}\\
+    \hline
+    1 & 2 & 3 & 4\\
+    \hline
+    2 & 2 & 3 & 4\\
+    \hline
+    3 & 2 & 3 & 4\\
+    \hline
+    4 & 2 & 3 & 4\\
+    \hline
+    5 & 2 & 3 & 4\\
+    \hline
+    6 & 2 & 3 & 4\\
+    \hline
+    7 & 2 & 3 & 4\\
+    \hline
+    8 & 2 & 3 & 4\\
+    \hline
+    9 & 2 & 3 & 4\\
+    \hline
+    10 & 2 & 3 & 4\\
+    \hline
+
+
+    \end{longtable}
+\end{center}
+
+
+А также тестируется счетчик таблиц, жирные и двойные линии.
+
+\begin{center}
+    \begin{longtable}{|p{2cm}||p{3cm}|p{7cm}|p{3cm}|}
+    \caption{Заголовок таблицы нумер 2}\\
+    \hline
+    1 & 2 & 3 & 4\\
+    \hline
+    2 & 2 & 3 & 4\\
+    \hline
+    3 & 2 & очень жирная ячейка \par с переносом (работаеттт!) & 4\\
+    \hline
+    4 & 2 & 3 & 4\\
+    \hline
+    5 & 2 & 3 & 4\\
+    \hline
+    6 & 2 & 3 & 4\\
+    \hline
+    7 & 2 & 3 & 4\\
+    \hline
+    8 & 2 & 3 & 4\\
+    \hline
+    9 & 2 & 3 & 4\\
+    \hline
+    10 & 2 & 3 & 4\\
+    \hline
+
+
+    \end{longtable}
+\end{center}
 
 \pagebreak
+
 \section{Алгоритм}
+Для проведения экспериментов был разработан однопоточный прототип сети, который позволяет обучать, в том числе используя GPU, несколько экземпляров нейронных сетей используя алгоритм среднего консенсуса, а также собирать, сохранять и визуализировать необходимую для последующего анализа статистику.
 \subsection{Средний консенсус}
+Основные этапы алгоритма обучения нейронных сетей с использованием алгоритма среднего консенсуса:
+
+\begin{algorithm}[H]
+\SetAlgoLined
+Определить топологию сети $W$ и количество узлов $p$.
+
+Инициализировать локальные модели $\theta_0^t$ на всех узлах $t \in \{ 1, \ldots, p \}$.
+
+Разделить исходные данные по узлам $S = \cup_{t=1}^p S^t$, причем $S^i \cap S^j = \oslash$ для $i \ne j$.
+
+Определить расписание изменения коэффициента скорости обучения $\alpha(k)$.
+
+Определить функцию ошибки $g(f(x_i,),y_i)$, где $(x_i,y_i) \in S$.
+
+Определить количество эпох $n$, итераций в каждой эпохе $m$, общее количество итераций $K=mn$.
+
+Определить частоту итераций консенсуса $q$.
+
+ \ForAll{$k \in \{0\ldots K-1\}$}{
+    \ForAll{$t \in \{0\ldots p-1\}$}{
+        Выбрать батч данных $S_k^t$.
+
+        Обновить веса локальной модели используя Mini Batch Gradient Descent:
+        \begin{equation}
+            \theta_{k+\frac{1}{2}}^t =
+            \theta_k^t - \alpha_k\frac{1}{|S_k^t|}\sum_{i\in S_k^t}\nabla g(f(x_i, \theta_k), y_i).
+        \end{equation}
+
+        Произвести итерацию консенсуса:
+
+      \eIf{$k=0 \text{ (mod } q$)}{
+        \begin{equation}
+            \theta_{k+1}^t =
+            \sum_{j \in N_t}w_{tj}\theta_{k+\frac{1}{2}}^j
+        \end{equation}
+       }{
+       \begin{equation}
+            \theta_{k+1}^t = \theta_{k+\frac{1}{2}}^t
+        \end{equation}
+        }
+    }
+}
+\caption{Средний консенсус}
+\end{algorithm}
+
+
+
 \subsection{Консенсус с несбалансированными данными}
+Предыдущий алгоритм был обобщен для имитации поведения агентов с разной вычислительной мощностью:
+
+\begin{algorithm}[H]
+\SetAlgoLined
+Определить топологию сети $W$ и количество узлов $p$.
+
+Инициализировать локальные модели $\theta_0^t$ на всех узлах $t \in \{ 1, \ldots, p \}$.
+
+Разделить исходные данные по узлам $S = \cup_{t=1}^p S^t$, причем $S^i \cap S^j = \oslash$ для $i \ne j$. Размеры множеств $S^t$ необязательно равны.
+
+Определить расписание изменения коэффициента скорости обучения $\alpha(k)$.
+
+Определить функцию ошибки $g(f(x_i,),y_i)$, где $(x_i,y_i) \in S$.
+
+Определить количество эпох $n$, итераций в каждой эпохе $m$, общее количество итераций $K=mn$.
+
+Определить частоту обучения на одном батче для каждого агента $qt^t$.
+
+Определить частоту итераций консенсуса для каждого агента $qc^t$.
+
+ \ForAll{$k \in \{0\ldots K-1\}$}{
+    \ForAll{$t \in \{0\ldots p-1\}$}{
+        Выбрать батч данных $S_k^t$.
+
+        Обновить веса локальной модели используя Mini Batch Gradient Descent:
+
+        \eIf{$k=0 \text{ (mod } qt^t$)}{
+        \begin{equation}
+            \theta_{k+\frac{1}{2}}^t =
+            \theta_k^t - \alpha_k\frac{1}{|S_k^t|}\sum_{i\in S_k^t}\nabla g(f(x_i, \theta_k), y_i).
+        \end{equation}
+        }{
+        \begin{equation}
+            \theta_{k+\frac{1}{2}}^t = \theta_k^t.
+        \end{equation}
+        }
+
+        Произвести итерацию консенсуса:
+
+      \eIf{$k=0 \text{ (mod } qc^t$)}{
+        \begin{equation}
+            \theta_{k+1}^t =
+            \sum_{j \in N_t}w_{tj}\theta_{k+\frac{1}{2}}^j
+        \end{equation}
+       }{
+       \begin{equation}
+            \theta_{k+1}^t = \theta_{k+\frac{1}{2}}^t
+        \end{equation}
+        }
+    }
+}
+\caption{Консенсус с несбалансированными данными}
+\end{algorithm}
+
 
 \section{Эксперименты}
 \subsection{Выбор модели и датасета}
 \subsection{Преобразование данных}
 \subsection{LSR}
-\subsection{warmup}
+\subsection{Разминка модели}
 \subsection{Топология сети}
 Про экспандеры, разное количество диагоналей в цикле и вцелом про то какие топологии хорошие
 
@@ -309,15 +417,37 @@ x^TLx = \frac{1}{2}\sum_{(i, j) \in E} a_{ij}(x_j-x_i)^2.
 % Библиография в cpsconf стиле
 % Аргумент {1} ниже включает переопределенный стиль с выравниванием слева
 \begin{thebibliography}{1}
-\bibitem{mbgd} S. Ghadimi, G. Lan, and H. Zhang. \flqq Mini-batch stochastic approximation methods for nonconvex stochastic composite optimization\frqq. Mathematical Programming, 2016. // URL: https://link.springer.com/content/pdf/10.1007/s10107-014-0846-1.pdf
+\bibitem{mbgd} S. Ghadimi, G. Lan, and H. Zhang. \flqq Mini-batch stochastic approximation methods for nonconvex stochastic composite optimization\frqq. Mathematical Programming, 2016.
 
-\bibitem{consensus_basics} R Olfati-Saber, JA Fax, RM Murray. \flqq Consensus and cooperation in networked multi-agent systems \frqq. IEEE, 2007.
+\bibitem{consensus_basics} R Olfati-Saber, JA Fax, RM Murray. \flqq Consensus and cooperation in networked multi-agent systems\frqq. IEEE, 2007.
 
-\bibitem{consensus_basics_2} R. Olfati-Saber and R. M. Murray, \flqq Consensus problems in networks of agents with switching topology and time-delays \frqq. IEEE Transactions on Automatic Control, vol. 49, no. 9, pp. 1520-1533, Sept. 2004, doi: 10.1109/TAC.2004.834113.
+\bibitem{consensus_basics_2} R. Olfati-Saber and R. M. Murray, \flqq Consensus problems in networks of agents with switching topology and time-delays\frqq. IEEE Transactions on Automatic Control, vol. 49, no. 9, pp. 1520-1533, Sept. 2004, doi: 10.1109/TAC.2004.834113.
 
 \bibitem{fast_averaging} Boyd S, \flqq Convex optimization of graph Laplacian eigenvalues \frqq. Proceedings of the International Congress of Mathematicians. – 2006. – Т. 3. – №. 1-3. – С. 1311-1319.
 
-\bibitem{decentralized_sgd} Koloskova A. et al. \flqq A unified theory of decentralized SGD with changing topology and local updates \frqq. International Conference on Machine Learning. – PMLR, 2020. – С. 5381-5393.
+\bibitem{decentralized_sgd} Koloskova A. et al. \flqq A unified theory of decentralized SGD with changing topology and local updates\frqq. International Conference on Machine Learning. – PMLR, 2020. – С. 5381-5393.
+
+\bibitem{o1} O. Dekel, R. Gilad-Bachrach, O. Shamir, and L. Xiao. \flqq Optimal distributed online prediction using mini-batches\frqq. Journal of Machine Learning Research, 2012.
+
+\bibitem{o2} A. Agarwal and J. C. Duchi. \flqq Distributed delayed stochastic optimization \frqq. In NIPS, 2011.
+
+\bibitem{o3} H. R. Feyzmahdavian, A. Aytekin, and M. Johansson. \flqq An asynchronous mini-batch algorithm for regularized stochastic optimization\frqq. IEEE Transactions on Automatic Control, 2016.
+
+\bibitem{o4} T. Paine, H. Jin, J. Yang, Z. Lin, and T. Huang. \flqq Gpu asynchronous stochastic gradient descent to speed up neural network training\frqq. arXiv preprint arXiv:1312.6186, 2013.
+
+\bibitem{o5} B. Recht, C. Re, S. Wright, and F. Niu. Hogwild: \flqq A lock-free approach to parallelizing stochastic gradient descent\frqq. In Advances in neural information processing systems, 2011.
+
+\bibitem{o6}  N. Luehr. \flqq Fast multi-gpu collectives with nccl\frqq. Nvidia blog, 2016.
+
+\bibitem{o7}  P. Patarasuk and X. Yuan. \flqq Bandwidth optimal all-reduce algorithms for clusters of workstations\frqq. Journal of Parallel and Distributed Computing, 2009.
+
+\bibitem{o8} Lian X. et al. \flqq Can decentralized algorithms outperform centralized algorithms? a case study for decentralized parallel stochastic gradient descent\frqq. arXiv preprint arXiv:1705.09056. – 2017.
+
+\bibitem{o9} B. Sirb and X. Ye. \flqq Consensus optimization with delayed and stochastic gradients on decentralized networks\frqq. In Big Data, 2016.
+
+\bibitem{o10} P. Bianchi, G. Fort, and W. Hachem. \flqq Performance of a distributed stochastic approximation algorithm\frqq. IEEE Transactions on Information Theory, 2013.
+
+\bibitem{o11} Xiangru Lian, Wei Zhang, Ce Zhang, Ji Li. \flqq Asynchronous Decentralized Parallel Stochastic Gradient Descent\frqq. Proceedings of the 35th International Conference on Machine Learning, PMLR 80:3043-3052, 2018.
 
 \end{thebibliography}
 \end{document}
